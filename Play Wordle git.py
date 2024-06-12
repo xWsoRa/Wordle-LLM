@@ -17,47 +17,68 @@ if "OPENAI_API_KEY" not in os.environ:
     os.environ["OPENAI_API_KEY"] = getpass.getpass("open ai api key here")
 
 llm = ChatOpenAI(
-    model = "gpt-4o",
+    model = "gpt-3.5-turbo-0125",
     temperature = 0.1,
-    max_tokens = 1024
+    max_tokens = 512
 )
 
 CHROMA_PATH = "chroma"
 
-PROMPT_TEMPLATE = """
-You are playing a game of Wordle. The target word is {target_word}.
-Try to guess the word in as few attempts as possible. After each guess, I will provide feedback indicating how many letters are correct and in the correct position (G), how many letters are correct but in the wrong position (Y), and how many letters are incorrect (_). Keep guessing until you find the word.
-Instructions for Wordle:
-Only guess small caps letters
-You have to guess the Wordle in six goes or less
-A correct letter in the correct position provides the feedback G
-A correct letter in the wrong position provides the feedback Y
-An incorrect letter or letter that is not in the word provides the feedback _
-Letters can be used more than once but you cannot use the same word more than once per game
-Answers are never plurals
+PROMPT_TEMPLATE_old = """
+You are playing a game of Wordle.
+
+For each guess, I will provide feedback as indicated below:
+(G) = Correct letters in correct position
+(Y) = Correct letters in incorrect position
+(_) = Incorrect letter
+
+Here are the rules:
+Guess one word at a time.
+Only use words with 5 letters.
+Only use small capital letters.
+Guess the word in six attempts or less.
+Answers are never plurals.
 Each guess must be a valid five-letter word.
-You must only use 5 letter words do not explain your reasoning
+Letters may be used more than once.
 
-Tips: use words that have different letters to see if they are in the word
+Tips: 
+Avoid guessing the same word.
+Keep (G)
+Move around (Y)
+Avoid (_)
+Learn the possible words here: {context}
 
-Example of a game:
-I: Play Wordle 5 times.
-O: Stair.
-I: 'S', 't', 'i', and 'r' are _, and 'a' is Y.
-O: Beast.
-I: 'B', 's', and 't' are _, and 'e' and 'a' are Y.
-O: Eager.
-I: 'r' and the second 'e' are _, and 'e', 'a', and 'g' are G.
-O: Eagle.
-I: Correct
-
-Context: {context}
-
+Your objective is to win the game by getting the feedback "G G G G G". Follow the rules and the tips.
 Guess: {guess}
-
 Feedback: {feedback}
 
-Make your next guess:
+Guess the word:
+"""
+
+PROMPT_TEMPLATE = """
+You are playing a game of Wordle. I will teach you how to play Wordle.
+
+Below are the rules of the game:
+1. Guess one word at a time.
+2. Only use words with 5 letters.
+3. Only use small capital letters.
+4. Guess the word in six attempts or less.
+5. Answer are never plurals.
+6. Each guess must be a valid five-letter word.
+7. Letters may be used more than once.
+8. Learn the possible words here: {context}
+
+Here is how to win:
+1. Guess the word. Follow the rules.
+2. If you get a "G" in feedback, keep the letter.
+3. If you get a "Y" in feedback, place the letter somewhere else.
+4. If you get a "_" in feedback, do not use the letter again.
+5. If you get a "G G G G G" in feedback, you win!
+
+Guess: {guess}
+Feedback: {feedback}
+
+Guess the word:
 """
 
 def load_documents(file_path):
@@ -127,7 +148,7 @@ def provide_feedback_presence(target_word, guess):
         else:
             feedback.append("_")    # Letter is not present in the word
             gray +=1
-    feedback.append(f"Congratulations {green} letters in the correct position, almost correct with {yellow} letters in the word but wrong position, completely wrong with {gray} letters.")
+    feedback.append(f"(G) = {green} letters, (Y) = {yellow} letters, (_) = {gray} letters")
     return " ".join(feedback)
 
 
