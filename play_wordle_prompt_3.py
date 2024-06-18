@@ -138,7 +138,7 @@ def main():
     successful_games = 0
     games = 0
 
-    while games < 5:  # Alter the total number of games as needed. 10 for testing prompt designs, 100 for final quantitative result.
+    while games < 10:  # Alter the total number of games as needed. 10 for testing prompt designs, 100 for final quantitative result.
         word = random.choice(words)  # Select a random word from the list
         print(f"Playing Wordle for the word: {word}")
         result, attempts = play_wordle(word)
